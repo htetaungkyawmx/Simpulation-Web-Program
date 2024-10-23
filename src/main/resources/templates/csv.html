@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simpulation Web Program</title>
+    <style>
+        #output {
+            white-space: pre-wrap; /* Preserve whitespace for formatting */
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: scroll;
+            margin-top: 20px; /* Add some space between rawData and output */
+        }
+        #rawData {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+<h1>Simpulation Web Program</h1>
+<input type="file" id="fileInput" accept=".csv">
+<button id="uploadBtn">Upload CSV</button>
+
+<div id="rawData"></div> <!-- Display raw CSV data -->
+<div id="output"></div> <!-- Display processed output -->
+
+<script>
+    const outputDiv = document.getElementById('output');
+    const rawDataDiv = document.getElementById('rawData'); // Select raw data div
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+
+    // Create WebSocket connection
+    const socket = new WebSocket('ws://localhost:8080/process-csv'); // Update with your WebSocket endpoint
+
+    // Listen for messages from server
+    socket.addEventListener('message', function(event) {
+        const data = event.data;
+
+        if (data === "End of CSV") {
+            outputDiv.innerHTML += `<strong>${data}</strong><br>`;
+        } else {
+            outputDiv.innerHTML += data + '<br>'; // Append each line to the output div
+        }
+        outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to the bottom
+    });
+
+    // Handle file upload
+    uploadBtn.addEventListener('click', function() {
+        const file = fileInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                rawDataDiv.innerText = fileContent; // Display raw CSV data in the rawData div
+
+                // Split the content into lines
+                const lines = fileContent.split('\n');
+                let index = 0;
+
+                // Function to display lines one by one with a delay
+                const intervalId = setInterval(() => {
+                    if (index < lines.length) {
+                        const line = lines[index].trim(); // Get the current line and trim whitespace
+                        socket.send(line); // Send each line to the server via WebSocket
+                        outputDiv.innerHTML += line + '<br>'; // Append the line to the output div
+                        index++;
+                    } else {
+                        clearInterval(intervalId); // Clear the interval when done
+                        socket.send("End of CSV"); // Notify that processing is done
+                    }
+                }, 5000); // Delay of 5000 milliseconds (5 seconds)
+            };
+            reader.readAsText(file);
+        } else {
+            alert('Please select a CSV file.');
+        }
+    });
+</script>
+</body>
+</html>
