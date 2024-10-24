@@ -38,7 +38,7 @@
     // Create WebSocket connection
     const socket = new WebSocket('ws://localhost:8080/process-csv'); // Update with your WebSocket endpoint
 
-    // Listen for messages from server
+    // Listen for messages from the server
     socket.addEventListener('message', function(event) {
         const data = event.data;
 
@@ -57,10 +57,14 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const fileContent = e.target.result;
-                rawDataDiv.innerText = fileContent; // Display raw CSV data in the rawData div
 
                 // Split the content into lines
-                const lines = fileContent.split('\n');
+                const lines = fileContent.split('\n').filter(line => line.trim() !== ""); // Filter out empty lines
+                const totalRecords = lines.length; // Calculate total records
+
+                // Display total records in rawDataDiv
+                rawDataDiv.innerText = `Total Records: ${totalRecords}\n`;
+
                 let index = 0;
 
                 // Function to display lines one by one with a delay
@@ -68,6 +72,9 @@
                     if (index < lines.length) {
                         const line = lines[index].trim(); // Get the current line and trim whitespace
                         socket.send(line); // Send each line to the server via WebSocket
+
+                        // Update rawDataDiv with the current line and count
+                        rawDataDiv.innerText += `line ${index + 1}, count ${index + 1} processing successfully\n`; // Show current line, count, and success message
                         outputDiv.innerHTML += line + '<br>'; // Append the line to the output div
                         index++;
                     } else {
@@ -82,5 +89,7 @@
         }
     });
 </script>
+
+
 </body>
 </html>
