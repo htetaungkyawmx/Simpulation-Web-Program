@@ -8,13 +8,14 @@ import java.util.List;
 @Service
 public class LogService {
 
-    private final List<String> logs = new ArrayList<>();
+    private List<String> logs = new ArrayList<>();
 
     public void log(String message) {
         logs.add(message);
+        System.out.println("Logged: " + message);
     }
 
     public List<String> getLogs() {
-        return new ArrayList<>(logs);
+        return logs;
     }
 }
