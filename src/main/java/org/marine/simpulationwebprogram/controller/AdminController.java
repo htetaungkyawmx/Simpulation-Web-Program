@@ -16,10 +16,11 @@ public class AdminController {
         this.csvLogService = csvLogService;
     }
 
-    // This renders the HTML page for the admin dashboard
+    // Render the dashboard with logs
     @GetMapping("/admin/dashboard")
     public String showDashboard(Model model) {
+        // Add logs to the model
         model.addAttribute("logs", csvLogService.getLogs());
-        return "admin-dashboard"; // renders admin-dashboard.html
+        return "admin-dashboard"; // Renders admin-dashboard.html
     }
 }

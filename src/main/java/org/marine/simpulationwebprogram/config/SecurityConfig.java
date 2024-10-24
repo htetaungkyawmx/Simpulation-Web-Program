@@ -21,10 +21,12 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
+                .csrf().disable()  // Disable CSRF protection for WebSocket requests
                 .formLogin(withDefaults());
 
         return http.build();
     }
+
 
     @Bean
     public UserDetailsService userDetailsService() {

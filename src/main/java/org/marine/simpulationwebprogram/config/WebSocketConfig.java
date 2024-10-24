@@ -12,6 +12,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new CSVWebSocketHandler(), "/process-csv").setAllowedOrigins("*");
+        registry.addHandler(new CSVWebSocketHandler(), "/process-csv")
+                .setAllowedOrigins("*");  // Allows cross-origin for testing purposes
     }
 }
