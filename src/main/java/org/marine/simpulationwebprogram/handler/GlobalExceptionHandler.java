@@ -11,9 +11,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleException(Exception e) {
-        // Log the exception message and stack trace for debugging
-        System.err.println("Error occurred: " + e.getMessage());
+        // Log the exception details
         e.printStackTrace();
-        return "Error occurred, please check the logs.";
+        return "An error occurred: " + e.getMessage();
     }
 }
