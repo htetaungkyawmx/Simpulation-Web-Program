@@ -3,37 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simpulation Web Program</title>
+    <title>Simulation Web Program</title>
     <style>
-        #output {
-            white-space: pre-wrap; /* Preserve whitespace for formatting */
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 400px;
-            overflow-y: scroll;
-            margin-top: 20px; /* Add some space between rawData and output */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
         }
-        #rawData {
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #fileCount, #transferStatus {
+            margin-top: 20px;
+        }
+        #transferStatus {
+            white-space: pre-wrap;
             border: 1px solid #ccc;
             padding: 10px;
             height: 200px;
             overflow-y: scroll;
+            background-color: #f9f9f9;
         }
     </style>
 </head>
 <body>
-<h1>Simpulation Web Program</h1>
-<input type="file" id="fileInput" accept=".csv">
-<button id="uploadBtn">Upload CSV</button>
+<div class="container">
+    <h1>Client Dashboard</h1>
 
-<div id="rawData"></div> <!-- Display raw CSV data -->
-<div id="output"></div> <!-- Display processed output -->
+    <div class="form-group">
+        <label for="serverIp">Server IP Address</label>
+        <input type="text" id="serverIp" placeholder="Enter server IP (localhost:8090)">
+    </div>
+
+    <div class="form-group">
+        <label for="csvFile">Upload Flight Log CSV File</label>
+        <input type="file" id="csvFile" accept=".csv">
+    </div>
+
+    <button id="uploadBtn">Upload and Start Transfer</button>
+
+    <div id="fileCount"></div>
+    <div id="transferStatus"></div>
+</div>
 
 <script>
-    const outputDiv = document.getElementById('output');
-    const rawDataDiv = document.getElementById('rawData'); // Select raw data div
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileInput');
+    const fileInput = document.getElementById('csvFile');
+    const serverIpInput = document.getElementById('serverIp');
+    const fileCountDiv = document.getElementById('fileCount');
+    const transferStatusDiv = document.getElementById('transferStatus');
+    const outputDiv = document.createElement('div'); // Create a div for output messages
+    transferStatusDiv.appendChild(outputDiv); // Append to transfer status
 
     // Create WebSocket connection
     const socket = new WebSocket('ws://localhost:8080/process-csv'); // Update with your WebSocket endpoint
@@ -50,46 +103,39 @@
         outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to the bottom
     });
 
-    // Handle file upload
-    uploadBtn.addEventListener('click', function() {
+    document.getElementById('uploadBtn').addEventListener('click', function() {
         const file = fileInput.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fileContent = e.target.result;
+        const serverIp = serverIpInput.value;
 
-                // Split the content into lines
-                const lines = fileContent.split('\n').filter(line => line.trim() !== ""); // Filter out empty lines
-                const totalRecords = lines.length; // Calculate total records
-
-                // Display total records in rawDataDiv
-                rawDataDiv.innerText = `Total Records: ${totalRecords}\n`;
-
-                let index = 0;
-
-                // Function to display lines one by one with a delay
-                const intervalId = setInterval(() => {
-                    if (index < lines.length) {
-                        const line = lines[index].trim(); // Get the current line and trim whitespace
-                        socket.send(line); // Send each line to the server via WebSocket
-
-                        // Update rawDataDiv with the current line and count
-                        rawDataDiv.innerText += `line ${index + 1}, count ${index + 1} processing successfully\n`; // Show current line, count, and success message
-                        outputDiv.innerHTML += line + '<br>'; // Append the line to the output div
-                        index++;
-                    } else {
-                        clearInterval(intervalId); // Clear the interval when done
-                        socket.send("End of CSV"); // Notify that processing is done
-                    }
-                }, 5000); // Delay of 5000 milliseconds (5 seconds)
-            };
-            reader.readAsText(file);
-        } else {
-            alert('Please select a CSV file.');
+        if (!file || !serverIp) {
+            alert('Please enter the server IP and select a CSV file.');
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const fileContent = e.target.result;
+            const lines = fileContent.split('\n').filter(line => line.trim() !== "");
+            fileCountDiv.innerText = `File Count: ${lines.length}`;
+
+            // Simulate sending each row as XML to the server
+            let index = 0;
+            const intervalId = setInterval(() => {
+                if (index < lines.length) {
+                    const line = lines[index].trim(); // Get the current line and trim whitespace
+                    socket.send(line); // Send each line to the server via WebSocket
+
+                    // Update transferStatusDiv with the current line and count
+                    transferStatusDiv.innerText += `Sending: ${line}\n[tx] line\n[rx] response code\n`;
+                    index++;
+                } else {
+                    clearInterval(intervalId); // Clear the interval when done
+                    socket.send("End of CSV"); // Notify that processing is done
+                }
+            }, 500); // Adjust delay as needed
+        };
+        reader.readAsText(file);
     });
 </script>
-
-
 </body>
 </html>
