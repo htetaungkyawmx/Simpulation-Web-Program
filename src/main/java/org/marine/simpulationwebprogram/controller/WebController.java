@@ -8,6 +8,6 @@ public class WebController {
 
     @GetMapping("/")
     public String home() {
-        return "csv";
+        return "client-dashboard";
     }
 }
