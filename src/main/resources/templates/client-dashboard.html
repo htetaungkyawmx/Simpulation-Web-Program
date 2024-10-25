@@ -66,7 +66,7 @@
 
     <div class="form-group">
         <label for="serverIp">Server IP Address</label>
-        <input type="text" id="serverIp" placeholder="Enter server IP (localhost:8090)">
+        <input type="text" id="serverIp" placeholder="Enter server IP (localhost:xxxx)">
     </div>
 
     <div class="form-group">
@@ -81,6 +81,63 @@
 </div>
 
 <script>
+    const fileInput = document.getElementById('csvFile');
+    const serverIpInput = document.getElementById('serverIp');
+    const fileCountDiv = document.getElementById('fileCount');
+    const transferStatusDiv = document.getElementById('transferStatus');
+    const outputDiv = document.createElement('div');
+    transferStatusDiv.appendChild(outputDiv);
+
+    const socket = new WebSocket('ws://localhost:8080/process-csv');
+
+    socket.addEventListener('message', function(event) {
+        const data = event.data;
+        if (data === "End of CSV") {
+            outputDiv.innerHTML += `<strong>${data}</strong><br>`;
+        } else {
+            outputDiv.innerHTML += data + '<br>';
+        }
+        outputDiv.scrollTop = outputDiv.scrollHeight;
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', function() {
+        const file = fileInput.files[0];
+        const serverIp = serverIpInput.value;
+
+        if (!file || !serverIp) {
+            alert('Please enter the server IP and select a CSV file.');
+            return;
+        }
+
+        socket.send('startTransfer'); // Send message to server to start the transfer
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const fileContent = e.target.result;
+            const lines = fileContent.split('\n').filter(line => line.trim() !== "");
+            fileCountDiv.innerText = `File Count: ${lines.length}`;
+
+            socket.send(`ExpectedCount:${lines.length}`);
+
+            let index = 0;
+            const intervalId = setInterval(() => {
+                if (index < lines.length) {
+                    const line = lines[index].trim();
+                    const xmlData = `<row><data>${line}</data></row>`;
+                    socket.send(xmlData);
+                    transferStatusDiv.innerText += `Sending: ${xmlData}\n[tx] xml\n[rx] response code\n`;
+                    index++;
+                } else {
+                    clearInterval(intervalId);
+                    socket.send("End of CSV");
+                }
+            }, 500);
+        };
+        reader.readAsText(file);
+    });
+</script>
+
+<!--<script>
     const fileInput = document.getElementById('csvFile');
     const serverIpInput = document.getElementById('serverIp');
     const fileCountDiv = document.getElementById('fileCount');
@@ -141,7 +198,7 @@
         };
         reader.readAsText(file);
     });
-</script>
+</script>-->
 
 <!--<script>
     const fileInput = document.getElementById('csvFile');
