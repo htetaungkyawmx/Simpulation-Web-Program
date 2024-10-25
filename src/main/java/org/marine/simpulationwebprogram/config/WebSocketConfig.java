@@ -21,7 +21,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/process-csv", "/server-dashboard").withSockJS();
+        registry.addEndpoint("/process-csv").withSockJS();
     }
 
     @Bean
