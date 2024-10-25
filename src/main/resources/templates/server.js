@@ -179,8 +179,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Start the server
-const PORT = 8081; // Change the port as needed
+const PORT = 8081;
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
