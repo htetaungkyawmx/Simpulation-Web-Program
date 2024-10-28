@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ClientDashboardController {
 
-    @GetMapping("/")
+    @GetMapping("/client")
     public String home() {
         return "client-dashboard";
     }
