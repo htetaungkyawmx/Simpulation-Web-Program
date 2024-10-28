@@ -85,23 +85,18 @@
     const serverIpInput = document.getElementById('serverIp');
     const fileCountDiv = document.getElementById('fileCount');
     const transferStatusDiv = document.getElementById('transferStatus');
-    const outputDiv = document.createElement('div');
-    transferStatusDiv.appendChild(outputDiv);
 
-    // WebSocket URL should point to the correct server IP and port
-    const socket = new WebSocket('ws://localhost:8080'); // Ensure this matches your server's WebSocket port
+    // Create WebSocket connection
+    const socket = new WebSocket('ws://localhost:8080/process-csv'); // Update with your WebSocket endpoint
 
-    socket.addEventListener('open', function() {
-        console.log('WebSocket connection established');
-    });
-
+    // Listen for messages from the server
     socket.addEventListener('message', function(event) {
         const data = event.data;
-        outputDiv.innerHTML += (data === "End of CSV" ? `<strong>${data}</strong><br>` : data + '<br>');
-        outputDiv.scrollTop = outputDiv.scrollHeight;
+        transferStatusDiv.innerHTML += data === "End of CSV" ? `<strong>${data}</strong><br>` : data + '<br>';
+        transferStatusDiv.scrollTop = transferStatusDiv.scrollHeight; // Scroll to the bottom
     });
 
-    document.getElementById('uploadBtn').addEventListener('click', function() {
+    document.getElementById('uploadBtn').addEventListener('click', () => {
         const file = fileInput.files[0];
         const serverIp = serverIpInput.value;
 
@@ -110,33 +105,45 @@
             return;
         }
 
-        socket.send('startTransfer');
-
         const reader = new FileReader();
+
+        // When the file is read
         reader.onload = function(e) {
             const lines = e.target.result.split('\n').filter(line => line.trim() !== "");
             fileCountDiv.innerText = `File Count: ${lines.length}`;
+
+            // Notify the server about the expected line count
             socket.send(`ExpectedCount:${lines.length}`);
 
             let index = 0;
+
+            // Send each line at 500 ms intervals
             const intervalId = setInterval(() => {
                 if (index < lines.length) {
                     const line = lines[index].trim();
                     const xmlData = `<row><data>${line}</data></row>`;
+
+                    // Send XML data
                     socket.send(xmlData);
                     transferStatusDiv.innerText += `Sending: ${xmlData}\n[tx] xml\n[rx] response code\n`;
-                    // Send the processed row to the server dashboard
-                    socket.send(`Processed row: ${line}`); // <-- Send processed row
+
                     index++;
                 } else {
+                    // All lines sent, end transfer
                     clearInterval(intervalId);
                     socket.send("End of CSV");
+                    transferStatusDiv.innerText += `<strong>End of CSV</strong><br>`;
                 }
-            }, 500);
+
+                // Scroll to the bottom to keep the latest log in view
+                transferStatusDiv.scrollTop = transferStatusDiv.scrollHeight;
+            }, 500); // Interval in ms
         };
+
+        // Read the file as text
         reader.readAsText(file);
     });
-</script>
 
+</script>
 </body>
 </html>
