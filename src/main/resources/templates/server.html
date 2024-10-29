@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulation Server Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #fileStatus, #logs, #transferStatus {
+      margin-top: 20px;
+    }
+    #logs, #transferStatus {
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Server Dashboard</h1>
+
+  <div class="form-group">
+    <label for="clientIp">Client IP Address</label>
+    <input type="text" id="clientIp" placeholder="Enter Client IP (e.g., ws://localhost:8081)">
+  </div>
+  <button id="connectBtn">Connect</button>
+
+  <div class="form-group">
+    <label>File Status:</label>
+    <div id="fileStatus">Waiting for files processing.....</div>
+  </div>
+
+  <div class="form-group">
+    <label>Transfer Logs:</label>
+    <div id="transferStatus"></div>
+  </div>
+
+  <div class="form-group">
+    <label>Real-Time Logs:</label>
+    <div id="logs"></div>
+  </div>
+
+  <div class="form-group">
+    <button id="downloadBtn" disabled>Download Received File</button>
+  </div>
+</div>
+
+<script>
+  const transferStatusDiv = document.getElementById('transferStatus');
+  const logsDiv = document.getElementById('logs');
+  const fileStatusDiv = document.getElementById('fileStatus');
+  const connectBtn = document.getElementById('connectBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  let socket;
+
+  function logMessage(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    logsDiv.innerText += `[${timestamp}] ${message}\n`;
+    logsDiv.scrollTop = logsDiv.scrollHeight;
+  }
+
+  function connectToClient() {
+    const clientIp = document.getElementById('clientIp').value.trim();
+
+    if (!clientIp) {
+      alert("Please enter a valid Client IP.");
+      return;
+    }
+
+    socket = new WebSocket(clientIp);
+
+    socket.addEventListener('open', () => {
+      logMessage("Connected to the server WebSocket.");
+      fileStatusDiv.innerText = "Connected to client, waiting for data...";
+      downloadBtn.disabled = false;
+    });
+
+    socket.addEventListener('message', (event) => {
+      const message = event.data;
+
+      transferStatusDiv.innerHTML += `Sending: ${message}\n[tx] csv\n[rx] response code\n`;
+      transferStatusDiv.scrollTop = transferStatusDiv.scrollHeight;
+
+      if (message.includes("End Of CSV")) {
+        fileStatusDiv.innerText = "Data received and saved to file.";
+      } else {
+        fileStatusDiv.innerText = "Receiving data...";
+      }
+
+      logMessage(message);
+    });
+
+    socket.addEventListener('close', () => {
+      logMessage("Disconnected from the server WebSocket.");
+      fileStatusDiv.innerText = "Connection closed.";
+      downloadBtn.disabled = true;
+    });
+
+    socket.addEventListener('error', () => {
+      logMessage("Error connecting to WebSocket. Please check the IP and try again.");
+      fileStatusDiv.innerText = "Error: Could not connect.";
+    });
+  }
+
+  connectBtn.addEventListener('click', connectToClient);
+
+  downloadBtn.addEventListener('click', () => {
+    fetch('/received_data.txt')
+            .then(response => response.blob())
+            .then(blob => {
+              const link = document.createElement("a");
+              link.href = URL.createObjectURL(blob);
+              link.download = "received_data.txt";
+              link.click();
+            });
+  });
+</script>
+
+</body>
+</html>
