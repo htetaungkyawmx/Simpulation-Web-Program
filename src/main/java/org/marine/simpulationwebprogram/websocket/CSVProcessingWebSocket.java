@@ -1,4 +1,4 @@
-package org.marine.simpulationwebprogram.websocket;
+package org.marine.mdtmm.websocket;
 
 import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
