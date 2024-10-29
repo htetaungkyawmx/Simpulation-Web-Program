@@ -23,12 +23,11 @@ public class CSVSimulator {
             try {
                 for (int i = 1; i <= 10; i++) {
                     String simulatedRow = "Row " + i + " content";
-                    messagingTemplate.convertAndSend("/process-csv", simulatedRow);
+                    messagingTemplate.convertAndSend("/socket", simulatedRow);
                     System.out.println("Sent: " + simulatedRow);
-                    TimeUnit.SECONDS.sleep(1); // Wait for 1 second before sending the next row
+                    TimeUnit.SECONDS.sleep(5);
                 }
-                // Send end of CSV signal
-                messagingTemplate.convertAndSend("/process-csv", "End of CSV");
+                messagingTemplate.convertAndSend("/socket", "End of CSV");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
